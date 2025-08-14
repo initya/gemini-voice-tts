@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Voice TTS Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .main-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .topic-selector {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .topic-selector label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .topic-selector select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            background: white;
+            transition: all 0.3s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 12px center;
+            background-repeat: no-repeat;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+
+        .topic-selector select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .generate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 140px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-spinner {
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .results {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .script-section {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .script-section h3 {
+            color: #1e293b;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .script-content {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #374151;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .audio-section {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .audio-section h3 {
+            color: #1e293b;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .audio-player {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .audio-player audio {
+            width: 100%;
+            border-radius: 12px;
+        }
+
+        .keywords-section {
+            margin-top: 20px;
+        }
+
+        .keywords-section h4 {
+            color: #374151;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .keywords-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .keyword-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-transform: lowercase;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #fecaca;
+            margin-top: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+            justify-content: center;
+        }
+
+        .play-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .play-btn:hover {
+            background: #059669;
+            transform: scale(1.1);
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+
+        .time-display {
+            font-size: 0.85rem;
+            color: #6b7280;
+            font-weight: 500;
+            min-width: 80px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-microphone-alt"></i> Gemini Voice TTS</h1>
+            <p>Generate creative scripts with AI-powered text-to-speech</p>
+        </div>
+
+        <div class="main-card">
+            <div class="controls">
+                <div class="topic-selector">
+                    <label for="topic">Choose Content Type:</label>
+                    <select id="topic" name="topic">
+                        <option value="random_facts">Random & Surprising Facts</option>
+                        <option value="mini_story">Humorous Mini-Story</option>
+                        <option value="geopolitical">Light Current Events</option>
+                    </select>
+                </div>
+                <button id="generateBtn" class="generate-btn">
+                    <i class="fas fa-play"></i>
+                    Generate Script
+                </button>
+            </div>
+
+            <div id="errorMessage" class="error-message hidden"></div>
+
+            <div id="results" class="results hidden">
+                <div class="script-section">
+                    <h3><i class="fas fa-file-alt"></i> Generated Script</h3>
+                    <div id="scriptContent" class="script-content"></div>
+                </div>
+
+                <div class="audio-section">
+                    <h3><i class="fas fa-volume-up"></i> Audio Player</h3>
+                    
+                    <div class="audio-player">
+                        <audio id="audioPlayer" controls style="display: none;">
+                            <source id="audioSource" src="" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                        
+                        <div id="customAudioControls">
+                            <button id="playPauseBtn" class="play-btn">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <div class="progress-bar" id="progressBar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <div class="time-display" id="timeDisplay">0:00 / 0:00</div>
+                        </div>
+                    </div>
+
+                    <div class="keywords-section">
+                        <h4>Key Topics</h4>
+                        <div id="keywordsList" class="keywords-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const generateBtn = document.getElementById('generateBtn');
+        const topicSelect = document.getElementById('topic');
+        const results = document.getElementById('results');
+        const scriptContent = document.getElementById('scriptContent');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const audioSource = document.getElementById('audioSource');
+        const keywordsList = document.getElementById('keywordsList');
+        const errorMessage = document.getElementById('errorMessage');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const timeDisplay = document.getElementById('timeDisplay');
+
+        let isPlaying = false;
+
+        generateBtn.addEventListener('click', async () => {
+            try {
+                // Show loading state
+                generateBtn.disabled = true;
+                generateBtn.innerHTML = '<div class="loading-spinner"></div> Generating...';
+                results.classList.add('hidden');
+                errorMessage.classList.add('hidden');
+
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        topic: topicSelect.value
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update script content
+                    scriptContent.textContent = data.script;
+
+                    // Update audio source
+                    audioSource.src = data.audio_url;
+                    audioPlayer.load();
+
+                    // Update keywords
+                    keywordsList.innerHTML = '';
+                    data.keywords.forEach(keyword => {
+                        const tag = document.createElement('span');
+                        tag.className = 'keyword-tag';
+                        tag.textContent = keyword;
+                        keywordsList.appendChild(tag);
+                    });
+
+                    // Show results
+                    results.classList.remove('hidden');
+                    
+                    // Reset audio controls
+                    resetAudioControls();
+                    
+                } else {
+                    throw new Error(data.error || 'Failed to generate content');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                errorMessage.textContent = `Error: ${error.message}`;
+                errorMessage.classList.remove('hidden');
+            } finally {
+                // Reset button state
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<i class="fas fa-play"></i> Generate Script';
+            }
+        });
+
+        // Custom audio controls
+        playPauseBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                audioPlayer.pause();
+            } else {
+                audioPlayer.play();
+            }
+        });
+
+        audioPlayer.addEventListener('play', () => {
+            isPlaying = true;
+            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        });
+
+        audioPlayer.addEventListener('pause', () => {
+            isPlaying = false;
+            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+        });
+
+        audioPlayer.addEventListener('ended', () => {
+            isPlaying = false;
+            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            progressFill.style.width = '0%';
+        });
+
+        audioPlayer.addEventListener('timeupdate', () => {
+            if (audioPlayer.duration) {
+                const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+                progressFill.style.width = progress + '%';
+                
+                const currentTime = formatTime(audioPlayer.currentTime);
+                const duration = formatTime(audioPlayer.duration);
+                timeDisplay.textContent = `${currentTime} / ${duration}`;
+            }
+        });
+
+        progressBar.addEventListener('click', (e) => {
+            if (audioPlayer.duration) {
+                const rect = progressBar.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const width = rect.width;
+                const clickTime = (clickX / width) * audioPlayer.duration;
+                audioPlayer.currentTime = clickTime;
+            }
+        });
+
+        function resetAudioControls() {
+            isPlaying = false;
+            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            progressFill.style.width = '0%';
+            timeDisplay.textContent = '0:00 / 0:00';
+        }
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Auto-play audio when loaded (optional)
+        audioPlayer.addEventListener('loadeddata', () => {
+            // Uncomment the line below if you want auto-play
+            // audioPlayer.play();
+        });
+    </script>
+</body>
+</html>

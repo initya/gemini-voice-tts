@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: gemini-voice-tts
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: GEMINI_API_KEY
+        sync: false  # This will need to be set manually in Render dashboard
