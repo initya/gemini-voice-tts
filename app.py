@@ -27,6 +27,7 @@ def generate_audio_with_tts(text):
         from google import genai as genai_sdk
         from google.genai import types
         
+        print("Attempting to use Google GenAI SDK for TTS...")
         client = genai_sdk.Client(api_key=API_KEY)
         
         # Generate audio using Gemini TTS
@@ -47,11 +48,12 @@ def generate_audio_with_tts(text):
         
         # Get audio data
         audio_data = audio_response.candidates[0].content.parts[0].inline_data.data
+        print("Successfully generated audio with Gemini TTS")
         return audio_data
         
-    except ImportError:
+    except ImportError as e:
         # google.genai package not available, fallback
-        print("Google GenAI SDK not available, using fallback")
+        print(f"Google GenAI SDK not available: {e}")
         return None
     except Exception as e:
         print(f"TTS generation failed: {e}")
@@ -112,9 +114,19 @@ def index():
 @app.route('/generate', methods=['POST'])
 def generate_content():
     """Generate script, keywords, and audio"""
+    generated_text = None
+    keywords_list = []
+    audio_url = None
+    has_server_audio = False
+    
     try:
+        print("=== Starting content generation ===")
         data = request.get_json()
+        if not data:
+            raise ValueError("No JSON data received")
+            
         topic_type = data.get('topic', 'random_facts')
+        print(f"Topic type: {topic_type}")
         
         # Customize the prompt based on topic selection
         topic_prompts = {
@@ -126,6 +138,7 @@ def generate_content():
         selected_topic = topic_prompts.get(topic_type, topic_prompts['random_facts'])
         
         # Generate script content
+        print("Generating script with Gemini...")
         model = genai.GenerativeModel("gemini-1.5-flash")
         response = model.generate_content(f"""
 Generate a short, creative, and funny 30-second reel script in a curious tone for speech generation for a fast-paced Instagram reel. 
@@ -151,38 +164,69 @@ Voiceover: Yeah… so basically, cardio day is a literal heartbreaker for them. 
 Now, generate the script.
 """)
         
+        if not response or not response.text:
+            raise ValueError("Failed to generate script content")
+            
         generated_text = response.text
+        print(f"Script generated successfully: {len(generated_text)} characters")
+        
+        # Extract keywords
         keywords_list = extract_keywords(generated_text)
+        print(f"Keywords extracted: {keywords_list}")
         
         # Try to generate actual audio
+        print("Attempting audio generation...")
         audio_data = generate_audio_with_tts(generated_text)
-        audio_url = None
         
         if audio_data:
-            # Save the actual audio file
-            audio_filename = f"audio_{uuid.uuid4().hex[:8]}.wav"
-            audio_path = os.path.join('static', 'audio', audio_filename)
-            
-            # Ensure audio directory exists
-            os.makedirs(os.path.dirname(audio_path), exist_ok=True)
-            
-            # Save audio file
-            wave_file(audio_path, audio_data)
-            audio_url = f'/static/audio/{audio_filename}'
+            try:
+                # Save the actual audio file
+                audio_filename = f"audio_{uuid.uuid4().hex[:8]}.wav"
+                audio_path = os.path.join('static', 'audio', audio_filename)
+                
+                # Ensure audio directory exists
+                os.makedirs(os.path.dirname(audio_path), exist_ok=True)
+                
+                # Save audio file
+                wave_file(audio_path, audio_data)
+                audio_url = f'/static/audio/{audio_filename}'
+                has_server_audio = True
+                print(f"Audio saved successfully: {audio_path}")
+            except Exception as audio_save_error:
+                print(f"Failed to save audio: {audio_save_error}")
+                audio_url = None
+                has_server_audio = False
+        else:
+            print("No audio data generated, will use browser TTS")
         
-        return jsonify({
+        # Always return a valid JSON response
+        result = {
             'success': True,
             'script': generated_text,
             'keywords': keywords_list,
             'audio_url': audio_url,
-            'has_server_audio': audio_data is not None
-        })
+            'has_server_audio': has_server_audio
+        }
+        
+        print(f"=== Generation complete, returning result ===")
+        return jsonify(result)
         
     except Exception as e:
-        return jsonify({
+        print(f"Error in generate_content: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        # Return a fallback response even on error
+        fallback_result = {
             'success': False,
-            'error': str(e)
-        }), 500
+            'error': str(e),
+            'script': generated_text or 'Error generating script',
+            'keywords': keywords_list or [],
+            'audio_url': audio_url,
+            'has_server_audio': has_server_audio
+        }
+        
+        return jsonify(fallback_result), 500
 
 @app.route('/static/audio/<filename>')
 def serve_audio(filename):
