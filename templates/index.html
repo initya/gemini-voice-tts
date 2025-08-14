@@ -403,9 +403,25 @@
                     // Update script content
                     scriptContent.textContent = data.script;
 
-                    // Update audio source
-                    audioSource.src = data.audio_url;
-                    audioPlayer.load();
+                    // Update audio source (if available)
+                    if (data.audio_url) {
+                        audioSource.src = data.audio_url;
+                        audioPlayer.load();
+                        document.getElementById('customAudioControls').style.display = 'block';
+                    } else {
+                        // Hide audio controls if no audio
+                        document.getElementById('customAudioControls').style.display = 'none';
+                        // Show message about audio
+                        const audioSection = document.querySelector('.audio-section');
+                        const audioMessage = audioSection.querySelector('.no-audio-message');
+                        if (!audioMessage) {
+                            const msg = document.createElement('p');
+                            msg.className = 'no-audio-message';
+                            msg.innerHTML = '🎤 <strong>Audio generation coming soon!</strong><br>Currently showing text-only output. TTS integration available for upgrade.';
+                            msg.style.cssText = 'color: #6b7280; font-style: italic; margin-top: 16px; padding: 12px; background: #f3f4f6; border-radius: 8px; text-align: center;';
+                            audioSection.appendChild(msg);
+                        }
+                    }
 
                     // Update keywords
                     keywordsList.innerHTML = '';

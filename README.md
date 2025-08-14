@@ -5,10 +5,10 @@ A modern web application that generates creative scripts using Google's Gemini A
 ## Features
 
 🎤 **AI-Powered Script Generation**: Generate creative, funny 30-second reel scripts
-🔊 **Text-to-Speech**: Convert scripts to high-quality audio using Gemini TTS
 🎯 **Keyword Extraction**: Automatically extract important keywords from generated content
-🎨 **Modern UI**: Beautiful, responsive web interface with real-time audio controls
+🎨 **Modern UI**: Beautiful, responsive web interface
 📱 **Mobile Friendly**: Works seamlessly on desktop and mobile devices
+🔊 **TTS Ready**: Framework ready for text-to-speech integration (upgrade feature)
 
 ## Content Types
 

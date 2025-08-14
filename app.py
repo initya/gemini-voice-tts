@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, jsonify, send_file
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 import wave
 import re
 import os
@@ -17,7 +16,7 @@ CORS(app)
 # Initialize Gemini client
 # Move your API key to environment variable for security
 API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyBMi7RqQdtvSjqGJFKePfEuAmbojFksIcc')
-client = genai.Client(api_key=API_KEY)
+genai.configure(api_key=API_KEY)
 
 def extract_keywords(text, top_n=10):
     """Extract the most important keywords from the generated text"""
@@ -88,9 +87,8 @@ def generate_content():
         selected_topic = topic_prompts.get(topic_type, topic_prompts['random_facts'])
         
         # Generate script content
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=f"""
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(f"""
 Generate a short, creative, and funny 30-second reel script in a curious tone for speech generation for a fast-paced Instagram reel. 
 add "Speech speed should be 5x" in every output.
 The script must ONLY be about: {selected_topic}
@@ -112,46 +110,26 @@ Voiceover: You know octopuses have three hearts… (pause) and two of them stop 
 Voiceover: Yeah… so basically, cardio day is a literal heartbreaker for them. (laugh)
 
 Now, generate the script.
-"""
-        )
+""")
         
         generated_text = response.text
         keywords_list = extract_keywords(generated_text)
         
-        # Generate audio from text
-        audio_response = client.models.generate_content(
-            model="gemini-2.5-flash-preview-tts",
-            contents=generated_text,
-            config=types.GenerateContentConfig(
-                response_modalities=["AUDIO"],
-                speech_config=types.SpeechConfig(
-                    voice_config=types.VoiceConfig(
-                        prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                            voice_name='Kore',
-                        )
-                    )
-                ),
-            )
-        )
+        # Note: Gemini TTS is not available in the free google-generativeai package
+        # For deployment, we'll provide text-only output
+        # You can integrate with other TTS services like:
+        # - Google Cloud Text-to-Speech (paid)
+        # - Amazon Polly (free tier available)
+        # - Azure Speech Services (free tier available)
         
-        # Get audio data
-        audio_data = audio_response.candidates[0].content.parts[0].inline_data.data
-        
-        # Generate unique filename
-        audio_filename = f"audio_{uuid.uuid4().hex[:8]}.wav"
-        audio_path = os.path.join('static', 'audio', audio_filename)
-        
-        # Ensure audio directory exists
-        os.makedirs(os.path.dirname(audio_path), exist_ok=True)
-        
-        # Save audio file
-        wave_file(audio_path, audio_data)
+        # Generate placeholder audio filename for frontend compatibility
+        audio_filename = f"audio_{uuid.uuid4().hex[:8]}.txt"
         
         return jsonify({
             'success': True,
             'script': generated_text,
             'keywords': keywords_list,
-            'audio_url': f'/static/audio/{audio_filename}'
+            'audio_url': None  # No audio for now - text generation only
         })
         
     except Exception as e:
