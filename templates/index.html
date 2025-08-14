@@ -378,6 +378,11 @@
         const timeDisplay = document.getElementById('timeDisplay');
 
         let isPlaying = false;
+        let speechSynthesis = window.speechSynthesis;
+        let currentUtterance = null;
+        let speechText = '';
+        let speechProgress = 0;
+        let speechDuration = 0;
 
         generateBtn.addEventListener('click', async () => {
             try {
@@ -402,26 +407,24 @@
                 if (data.success) {
                     // Update script content
                     scriptContent.textContent = data.script;
+                    speechText = data.script;
 
-                    // Update audio source (if available)
-                    if (data.audio_url) {
-                        audioSource.src = data.audio_url;
-                        audioPlayer.load();
-                        document.getElementById('customAudioControls').style.display = 'block';
-                    } else {
-                        // Hide audio controls if no audio
-                        document.getElementById('customAudioControls').style.display = 'none';
-                        // Show message about audio
-                        const audioSection = document.querySelector('.audio-section');
-                        const audioMessage = audioSection.querySelector('.no-audio-message');
-                        if (!audioMessage) {
-                            const msg = document.createElement('p');
-                            msg.className = 'no-audio-message';
-                            msg.innerHTML = '🎤 <strong>Audio generation coming soon!</strong><br>Currently showing text-only output. TTS integration available for upgrade.';
-                            msg.style.cssText = 'color: #6b7280; font-style: italic; margin-top: 16px; padding: 12px; background: #f3f4f6; border-radius: 8px; text-align: center;';
-                            audioSection.appendChild(msg);
-                        }
+                    // Remove any existing no-audio message
+                    const existingMessage = document.querySelector('.no-audio-message');
+                    if (existingMessage) {
+                        existingMessage.remove();
                     }
+
+                    // Show audio controls for browser TTS
+                    document.getElementById('customAudioControls').style.display = 'block';
+                    
+                    // Clean text for speech (remove stage directions and sound effects)
+                    speechText = data.script
+                        .replace(/\([^)]*\)/g, '') // Remove stage directions
+                        .replace(/\[[^\]]*\]/g, '') // Remove sound effects
+                        .replace(/Speech speed should be 5x/gi, '') // Remove speed instruction
+                        .replace(/Voiceover:/gi, '') // Remove voiceover labels
+                        .trim();
 
                     // Update keywords
                     keywordsList.innerHTML = '';
@@ -453,53 +456,120 @@
             }
         });
 
-        // Custom audio controls
+        // Custom audio controls for Speech Synthesis
         playPauseBtn.addEventListener('click', () => {
             if (isPlaying) {
-                audioPlayer.pause();
+                // Pause/Stop speech
+                speechSynthesis.cancel();
+                isPlaying = false;
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                clearInterval(window.speechProgressInterval);
             } else {
-                audioPlayer.play();
+                // Start speech
+                if (speechText) {
+                    startSpeech();
+                }
             }
         });
 
-        audioPlayer.addEventListener('play', () => {
-            isPlaying = true;
-            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-        });
-
-        audioPlayer.addEventListener('pause', () => {
-            isPlaying = false;
-            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-        });
-
-        audioPlayer.addEventListener('ended', () => {
-            isPlaying = false;
-            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-            progressFill.style.width = '0%';
-        });
-
-        audioPlayer.addEventListener('timeupdate', () => {
-            if (audioPlayer.duration) {
-                const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-                progressFill.style.width = progress + '%';
+        function startSpeech() {
+            if (!speechText) return;
+            
+            // Cancel any ongoing speech
+            speechSynthesis.cancel();
+            
+            // Create utterance
+            currentUtterance = new SpeechSynthesisUtterance(speechText);
+            
+            // Configure speech settings
+            currentUtterance.rate = 1.2; // Slightly faster for reel-style
+            currentUtterance.pitch = 1.0;
+            currentUtterance.volume = 1.0;
+            
+            // Try to use a more natural voice
+            const voices = speechSynthesis.getVoices();
+            const preferredVoice = voices.find(voice => 
+                voice.name.includes('Google') || 
+                voice.name.includes('Microsoft') || 
+                voice.lang.startsWith('en')
+            );
+            if (preferredVoice) {
+                currentUtterance.voice = preferredVoice;
+            }
+            
+            // Estimate duration (roughly 150 words per minute)
+            const wordCount = speechText.split(' ').length;
+            speechDuration = (wordCount / 180) * 60; // seconds
+            
+            currentUtterance.onstart = () => {
+                isPlaying = true;
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                speechProgress = 0;
                 
-                const currentTime = formatTime(audioPlayer.currentTime);
-                const duration = formatTime(audioPlayer.duration);
-                timeDisplay.textContent = `${currentTime} / ${duration}`;
-            }
-        });
+                // Start progress animation
+                window.speechProgressInterval = setInterval(() => {
+                    speechProgress += 0.1;
+                    const progress = Math.min((speechProgress / speechDuration) * 100, 100);
+                    progressFill.style.width = progress + '%';
+                    
+                    const currentTime = formatTime(speechProgress);
+                    const totalTime = formatTime(speechDuration);
+                    timeDisplay.textContent = `${currentTime} / ${totalTime}`;
+                }, 100);
+            };
+            
+            currentUtterance.onend = () => {
+                isPlaying = false;
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                progressFill.style.width = '100%';
+                clearInterval(window.speechProgressInterval);
+                
+                // Reset after a moment
+                setTimeout(() => {
+                    progressFill.style.width = '0%';
+                    timeDisplay.textContent = `0:00 / ${formatTime(speechDuration)}`;
+                }, 1000);
+            };
+            
+            currentUtterance.onerror = () => {
+                isPlaying = false;
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                clearInterval(window.speechProgressInterval);
+            };
+            
+            // Start speaking
+            speechSynthesis.speak(currentUtterance);
+        }
+
+        // Load voices when available
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = () => {
+                // Voices loaded
+            };
+        }
 
         progressBar.addEventListener('click', (e) => {
-            if (audioPlayer.duration) {
+            if (speechDuration && speechText) {
+                speechSynthesis.cancel();
                 const rect = progressBar.getBoundingClientRect();
                 const clickX = e.clientX - rect.left;
                 const width = rect.width;
-                const clickTime = (clickX / width) * audioPlayer.duration;
-                audioPlayer.currentTime = clickTime;
+                const clickProgress = clickX / width;
+                
+                // Can't really seek in speech synthesis, so restart from beginning
+                // This is a limitation of the Web Speech API
+                if (clickProgress > 0.1) {
+                    // Just restart the speech
+                    setTimeout(() => startSpeech(), 100);
+                }
             }
         });
 
         function resetAudioControls() {
+            // Cancel any ongoing speech
+            speechSynthesis.cancel();
+            clearInterval(window.speechProgressInterval);
+            
             isPlaying = false;
             playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
             progressFill.style.width = '0%';
