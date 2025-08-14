@@ -409,22 +409,47 @@
                     scriptContent.textContent = data.script;
                     speechText = data.script;
 
-                    // Remove any existing no-audio message
-                    const existingMessage = document.querySelector('.no-audio-message');
-                    if (existingMessage) {
-                        existingMessage.remove();
-                    }
+                    // Remove any existing audio messages
+                    const existingMessages = document.querySelectorAll('.no-audio-message, .gemini-audio-message, .browser-audio-message');
+                    existingMessages.forEach(msg => msg.remove());
 
-                    // Show audio controls for browser TTS
-                    document.getElementById('customAudioControls').style.display = 'block';
-                    
-                    // Clean text for speech (remove stage directions and sound effects)
-                    speechText = data.script
-                        .replace(/\([^)]*\)/g, '') // Remove stage directions
-                        .replace(/\[[^\]]*\]/g, '') // Remove sound effects
-                        .replace(/Speech speed should be 5x/gi, '') // Remove speed instruction
-                        .replace(/Voiceover:/gi, '') // Remove voiceover labels
-                        .trim();
+                    // Check if we have server-generated audio
+                    if (data.audio_url && data.has_server_audio) {
+                        // Use server-generated Gemini audio
+                        audioSource.src = data.audio_url;
+                        audioPlayer.load();
+                        audioPlayer.style.display = 'block';
+                        document.getElementById('customAudioControls').style.display = 'none';
+                        
+                        // Show message about Gemini audio
+                        const audioSection = document.querySelector('.audio-section');
+                        const geminiMessage = document.createElement('p');
+                        geminiMessage.className = 'gemini-audio-message';
+                        geminiMessage.innerHTML = '🎤 <strong>Gemini AI Generated Audio</strong><br>High-quality voice synthesis by Google';
+                        geminiMessage.style.cssText = 'color: #10b981; font-weight: 500; margin-bottom: 16px; padding: 12px; background: #ecfdf5; border-radius: 8px; text-align: center; border: 1px solid #a7f3d0;';
+                        audioSection.insertBefore(geminiMessage, audioSection.firstChild);
+                        
+                    } else {
+                        // Fallback to browser TTS
+                        audioPlayer.style.display = 'none';
+                        document.getElementById('customAudioControls').style.display = 'block';
+                        
+                        // Clean text for speech (remove stage directions and sound effects)
+                        speechText = data.script
+                            .replace(/\([^)]*\)/g, '') // Remove stage directions
+                            .replace(/\[[^\]]*\]/g, '') // Remove sound effects
+                            .replace(/Speech speed should be 5x/gi, '') // Remove speed instruction
+                            .replace(/Voiceover:/gi, '') // Remove voiceover labels
+                            .trim();
+                            
+                        // Show message about browser TTS
+                        const audioSection = document.querySelector('.audio-section');
+                        const browserMessage = document.createElement('p');
+                        browserMessage.className = 'browser-audio-message';
+                        browserMessage.innerHTML = '🔊 <strong>Browser Text-to-Speech</strong><br>Using your device\'s built-in voice';
+                        browserMessage.style.cssText = 'color: #6366f1; font-weight: 500; margin-bottom: 16px; padding: 12px; background: #eef2ff; border-radius: 8px; text-align: center; border: 1px solid #c7d2fe;';
+                        audioSection.insertBefore(browserMessage, audioSection.firstChild);
+                    }
 
                     // Update keywords
                     keywordsList.innerHTML = '';

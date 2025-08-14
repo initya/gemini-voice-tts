@@ -9,6 +9,7 @@ from collections import Counter
 from flask_cors import CORS
 import tempfile
 import base64
+import io
 
 app = Flask(__name__)
 CORS(app)
@@ -17,6 +18,44 @@ CORS(app)
 # Move your API key to environment variable for security
 API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyBMi7RqQdtvSjqGJFKePfEuAmbojFksIcc')
 genai.configure(api_key=API_KEY)
+
+def generate_audio_with_tts(text):
+    """Generate audio using available TTS method"""
+    try:
+        # Try to use the google.genai package (if TTS is available)
+        # This is the original approach from your TTS.py
+        from google import genai as genai_sdk
+        from google.genai import types
+        
+        client = genai_sdk.Client(api_key=API_KEY)
+        
+        # Generate audio using Gemini TTS
+        audio_response = client.models.generate_content(
+            model="gemini-2.5-flash-preview-tts",
+            contents=text,
+            config=types.GenerateContentConfig(
+                response_modalities=["AUDIO"],
+                speech_config=types.SpeechConfig(
+                    voice_config=types.VoiceConfig(
+                        prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                            voice_name='Kore',
+                        )
+                    )
+                ),
+            )
+        )
+        
+        # Get audio data
+        audio_data = audio_response.candidates[0].content.parts[0].inline_data.data
+        return audio_data
+        
+    except ImportError:
+        # google.genai package not available, fallback
+        print("Google GenAI SDK not available, using fallback")
+        return None
+    except Exception as e:
+        print(f"TTS generation failed: {e}")
+        return None
 
 def extract_keywords(text, top_n=10):
     """Extract the most important keywords from the generated text"""
@@ -115,21 +154,28 @@ Now, generate the script.
         generated_text = response.text
         keywords_list = extract_keywords(generated_text)
         
-        # Note: Gemini TTS is not available in the free google-generativeai package
-        # For deployment, we'll provide text-only output
-        # You can integrate with other TTS services like:
-        # - Google Cloud Text-to-Speech (paid)
-        # - Amazon Polly (free tier available)
-        # - Azure Speech Services (free tier available)
+        # Try to generate actual audio
+        audio_data = generate_audio_with_tts(generated_text)
+        audio_url = None
         
-        # Generate placeholder audio filename for frontend compatibility
-        audio_filename = f"audio_{uuid.uuid4().hex[:8]}.txt"
+        if audio_data:
+            # Save the actual audio file
+            audio_filename = f"audio_{uuid.uuid4().hex[:8]}.wav"
+            audio_path = os.path.join('static', 'audio', audio_filename)
+            
+            # Ensure audio directory exists
+            os.makedirs(os.path.dirname(audio_path), exist_ok=True)
+            
+            # Save audio file
+            wave_file(audio_path, audio_data)
+            audio_url = f'/static/audio/{audio_filename}'
         
         return jsonify({
             'success': True,
             'script': generated_text,
             'keywords': keywords_list,
-            'audio_url': None  # No audio for now - text generation only
+            'audio_url': audio_url,
+            'has_server_audio': audio_data is not None
         })
         
     except Exception as e:
