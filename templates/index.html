@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Voice TTS Generator</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Gemini TTS Generator</title>
     <style>
         * {
             margin: 0;
@@ -14,7 +12,7 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
@@ -23,114 +21,186 @@
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
         }
 
         .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            padding: 30px;
             text-align: center;
-            margin-bottom: 40px;
             color: white;
         }
 
         .header h1 {
-            font-size: 3rem;
-            font-weight: 700;
+            font-size: 2.5rem;
             margin-bottom: 10px;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            font-weight: 700;
         }
 
         .header p {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             opacity: 0.9;
-            font-weight: 300;
         }
 
-        .main-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
+        .main-content {
             padding: 40px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .controls {
-            display: flex;
-            gap: 20px;
+        .input-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
             margin-bottom: 30px;
-            flex-wrap: wrap;
-            align-items: center;
         }
 
-        .topic-selector {
-            flex: 1;
-            min-width: 250px;
+        .input-group {
+            margin-bottom: 20px;
         }
 
-        .topic-selector label {
+        label {
             display: block;
-            font-weight: 600;
-            color: #374151;
             margin-bottom: 8px;
-            font-size: 0.9rem;
+            font-weight: 600;
+            color: #333;
         }
 
-        .topic-selector select {
+        textarea {
             width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            font-size: 1rem;
-            background: white;
-            transition: all 0.3s ease;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
-            background-position: right 12px center;
-            background-repeat: no-repeat;
-            background-size: 16px;
-            padding-right: 40px;
+            padding: 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            resize: vertical;
+            min-height: 120px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
         }
 
-        .topic-selector select:focus {
+        textarea:focus {
             outline: none;
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        .generate-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
             padding: 15px 30px;
-            border-radius: 12px;
-            font-size: 1rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            min-width: 140px;
-            display: flex;
+            text-decoration: none;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
-            justify-content: center;
         }
 
-        .generate-btn:hover {
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
         }
 
-        .generate-btn:disabled {
-            opacity: 0.7;
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
+            transform: none !important;
         }
 
-        .loading-spinner {
-            border: 2px solid transparent;
-            border-top: 2px solid white;
+        .result-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .result-section.show {
+            display: block;
+        }
+
+        .script-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .keywords-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .keyword {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .download-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .audio-player {
+            width: 100%;
+            margin: 15px 0;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
             border-radius: 50%;
-            width: 20px;
-            height: 20px;
             animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
         }
 
         @keyframes spin {
@@ -138,497 +208,275 @@
             100% { transform: rotate(360deg); }
         }
 
-        .results {
-            display: grid;
-            grid-template-columns: 1fr 300px;
-            gap: 30px;
-            margin-top: 30px;
-        }
-
-        @media (max-width: 768px) {
-            .results {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .script-section {
-            background: #f8fafc;
-            border-radius: 16px;
-            padding: 24px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .script-section h3 {
-            color: #1e293b;
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .script-content {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            font-size: 1rem;
-            line-height: 1.6;
-            color: #374151;
-            white-space: pre-wrap;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .audio-section {
-            background: #f8fafc;
-            border-radius: 16px;
-            padding: 24px;
-            border: 1px solid #e2e8f0;
-            text-align: center;
-        }
-
-        .audio-section h3 {
-            color: #1e293b;
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-        }
-
-        .audio-player {
-            width: 100%;
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #f5c6cb;
             margin-bottom: 20px;
-        }
-
-        .audio-player audio {
-            width: 100%;
-            border-radius: 12px;
-        }
-
-        .keywords-section {
-            margin-top: 20px;
-        }
-
-        .keywords-section h4 {
-            color: #374151;
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 12px;
-        }
-
-        .keywords-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .keyword-tag {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            text-transform: lowercase;
-        }
-
-        .error-message {
-            background: #fee2e2;
-            color: #dc2626;
-            padding: 16px;
-            border-radius: 12px;
-            border: 1px solid #fecaca;
-            margin-top: 20px;
-        }
-
-        .hidden {
             display: none;
         }
 
-        .audio-controls {
+        .error.show {
+            display: block;
+        }
+
+        .files-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+        }
+
+        .file-list {
+            list-style: none;
+        }
+
+        .file-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
             display: flex;
+            justify-content: between;
             align-items: center;
-            gap: 12px;
-            margin-top: 12px;
-            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        .play-btn {
-            background: #10b981;
-            color: white;
-            border: none;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-        }
-
-        .play-btn:hover {
-            background: #059669;
-            transform: scale(1.1);
-        }
-
-        .progress-bar {
+        .file-name {
             flex: 1;
-            height: 6px;
-            background: #e5e7eb;
-            border-radius: 3px;
-            overflow: hidden;
-            cursor: pointer;
+            font-family: monospace;
+            color: #333;
         }
 
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            width: 0%;
-            transition: width 0.1s ease;
+        .file-actions {
+            display: flex;
+            gap: 10px;
         }
 
-        .time-display {
-            font-size: 0.85rem;
-            color: #6b7280;
-            font-weight: 500;
-            min-width: 80px;
-            text-align: center;
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-microphone-alt"></i> Gemini Voice TTS</h1>
-            <p>Generate creative scripts with AI-powered text-to-speech</p>
+            <h1>🎙️ Gemini TTS Generator</h1>
+            <p>Generate creative Instagram reel scripts with AI-powered text-to-speech</p>
         </div>
 
-        <div class="main-card">
-            <div class="controls">
-                <div class="topic-selector">
-                    <label for="topic">Choose Content Type:</label>
-                    <select id="topic" name="topic">
-                        <option value="random_facts">Random & Surprising Facts</option>
-                        <option value="mini_story">Humorous Mini-Story</option>
-                        <option value="geopolitical">Light Current Events</option>
-                    </select>
+        <div class="main-content">
+            <!-- Input Section -->
+            <div class="input-section">
+                <div class="input-group">
+                    <label for="customPrompt">Custom Prompt (Optional)</label>
+                    <textarea 
+                        id="customPrompt" 
+                        placeholder="Enter your custom prompt here, or leave empty to use the default Instagram reel script generator..."></textarea>
                 </div>
-                <button id="generateBtn" class="generate-btn">
-                    <i class="fas fa-play"></i>
-                    Generate Script
-                </button>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="generateTTS()">
+                        🎵 Generate TTS Audio
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadFiles()">
+                        📁 View Generated Files
+                    </button>
+                </div>
             </div>
 
-            <div id="errorMessage" class="error-message hidden"></div>
+            <!-- Loading -->
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Generating your TTS audio... This may take a few moments.</p>
+            </div>
 
-            <div id="results" class="results hidden">
-                <div class="script-section">
-                    <h3><i class="fas fa-file-alt"></i> Generated Script</h3>
-                    <div id="scriptContent" class="script-content"></div>
+            <!-- Error -->
+            <div id="error" class="error"></div>
+
+            <!-- Results Section -->
+            <div id="resultSection" class="result-section">
+                <h2>✨ Generated Content</h2>
+                
+                <div class="script-content">
+                    <h3>📝 Script</h3>
+                    <div id="scriptContent"></div>
                 </div>
 
-                <div class="audio-section">
-                    <h3><i class="fas fa-volume-up"></i> Audio Player</h3>
-                    
-                    <div class="audio-player">
-                        <audio id="audioPlayer" controls style="display: none;">
-                            <source id="audioSource" src="" type="audio/wav">
-                            Your browser does not support the audio element.
-                        </audio>
-                        
-                        <div id="customAudioControls">
-                            <button id="playPauseBtn" class="play-btn">
-                                <i class="fas fa-play"></i>
-                            </button>
-                            <div class="progress-bar" id="progressBar">
-                                <div class="progress-fill" id="progressFill"></div>
-                            </div>
-                            <div class="time-display" id="timeDisplay">0:00 / 0:00</div>
-                        </div>
-                    </div>
-
-                    <div class="keywords-section">
-                        <h4>Key Topics</h4>
-                        <div id="keywordsList" class="keywords-list"></div>
-                    </div>
+                <div class="keywords-section">
+                    <h3>🏷️ Keywords</h3>
+                    <div id="keywordsContent" class="keywords"></div>
                 </div>
+
+                <div class="download-section">
+                    <h3>🎧 Generated Audio</h3>
+                    <audio id="audioPlayer" class="audio-player" controls>
+                        Your browser does not support the audio element.
+                    </audio>
+                    <br>
+                    <a id="downloadBtn" class="btn btn-primary" download>
+                        ⬇️ Download Audio File
+                    </a>
+                </div>
+            </div>
+
+            <!-- Files Section -->
+            <div id="filesSection" class="files-section" style="display: none;">
+                <h2>📂 Generated Files</h2>
+                <ul id="filesList" class="file-list">
+                    <!-- Files will be populated here -->
+                </ul>
             </div>
         </div>
     </div>
 
     <script>
-        const generateBtn = document.getElementById('generateBtn');
-        const topicSelect = document.getElementById('topic');
-        const results = document.getElementById('results');
-        const scriptContent = document.getElementById('scriptContent');
-        const audioPlayer = document.getElementById('audioPlayer');
-        const audioSource = document.getElementById('audioSource');
-        const keywordsList = document.getElementById('keywordsList');
-        const errorMessage = document.getElementById('errorMessage');
-        const playPauseBtn = document.getElementById('playPauseBtn');
-        const progressBar = document.getElementById('progressBar');
-        const progressFill = document.getElementById('progressFill');
-        const timeDisplay = document.getElementById('timeDisplay');
-
-        let isPlaying = false;
-        let speechSynthesis = window.speechSynthesis;
-        let currentUtterance = null;
-        let speechText = '';
-        let speechProgress = 0;
-        let speechDuration = 0;
-
-        generateBtn.addEventListener('click', async () => {
+        async function generateTTS() {
+            const customPrompt = document.getElementById('customPrompt').value.trim();
+            const loadingDiv = document.getElementById('loading');
+            const errorDiv = document.getElementById('error');
+            const resultSection = document.getElementById('resultSection');
+            
+            // Reset UI
+            loadingDiv.classList.add('show');
+            errorDiv.classList.remove('show');
+            resultSection.classList.remove('show');
+            
             try {
-                // Show loading state
-                generateBtn.disabled = true;
-                generateBtn.innerHTML = '<div class="loading-spinner"></div> Generating...';
-                results.classList.add('hidden');
-                errorMessage.classList.add('hidden');
-
                 const response = await fetch('/generate', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        topic: topicSelect.value
+                        custom_prompt: customPrompt
                     })
                 });
-
+                
                 const data = await response.json();
-
+                
                 if (data.success) {
-                    // Update script content
-                    scriptContent.textContent = data.script;
-                    speechText = data.script;
+                    // Display script
+                    document.getElementById('scriptContent').innerHTML = 
+                        data.script.replace(/\n/g, '<br>');
+                    
+                    // Display keywords
+                    const keywordsDiv = document.getElementById('keywordsContent');
+                    keywordsDiv.innerHTML = '';
+                    data.keywords.forEach(keyword => {
+                        const span = document.createElement('span');
+                        span.className = 'keyword';
+                        span.textContent = keyword;
+                        keywordsDiv.appendChild(span);
+                    });
+                    
+                    // Setup audio player and download
+                    const audioPlayer = document.getElementById('audioPlayer');
+                    const downloadBtn = document.getElementById('downloadBtn');
+                    
+                    audioPlayer.src = `/download/${data.filename}`;
+                    downloadBtn.href = `/download/${data.filename}`;
+                    downloadBtn.download = data.filename;
+                    
+                    // Show results
+                    resultSection.classList.add('show');
+                    
+                    // Auto-play audio (some browsers may block this)
+                    audioPlayer.play().catch(() => {
+                        console.log('Auto-play was prevented by browser');
+                    });
+                    
+                } else {
+                    throw new Error(data.error || 'Unknown error occurred');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                errorDiv.textContent = `Error: ${error.message}`;
+                errorDiv.classList.add('show');
+            } finally {
+                loadingDiv.classList.remove('show');
+            }
+        }
 
-                    // Remove any existing audio messages
-                    const existingMessages = document.querySelectorAll('.no-audio-message, .gemini-audio-message, .browser-audio-message');
-                    existingMessages.forEach(msg => msg.remove());
-
-                    // Check if we have server-generated audio
-                    if (data.audio_url && data.has_server_audio) {
-                        // Use server-generated audio
-                        audioSource.src = data.audio_url;
-                        audioPlayer.load();
-                        audioPlayer.style.display = 'block';
-                        document.getElementById('customAudioControls').style.display = 'none';
+        async function loadFiles() {
+            const filesSection = document.getElementById('filesSection');
+            const filesList = document.getElementById('filesList');
+            
+            try {
+                const response = await fetch('/files');
+                const data = await response.json();
+                
+                if (data.files && data.files.length > 0) {
+                    filesList.innerHTML = '';
+                    
+                    data.files.forEach(filename => {
+                        const li = document.createElement('li');
+                        li.className = 'file-item';
                         
-                        // Show message about generated audio with download option
-                        const audioSection = document.querySelector('.audio-section');
-                        const geminiMessage = document.createElement('div');
-                        geminiMessage.className = 'gemini-audio-message';
-                        
-                        // Extract filename from audio_url
-                        const filename = data.audio_url.split('/').pop();
-                        
-                        geminiMessage.innerHTML = `
-                            <p style="margin: 0 0 12px 0;"><strong>🎤 Generated Audio Available</strong><br>Server-generated audio file ready for playback</p>
-                            <div style="display: flex; gap: 12px; justify-content: center; align-items: center;">
-                                <button onclick="document.getElementById('audioPlayer').play()" style="
-                                    background: #10b981; color: white; border: none; padding: 8px 16px; 
-                                    border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 500;
-                                ">▶️ Play Audio</button>
-                                <a href="/download/audio/${filename}" download style="
-                                    background: #3b82f6; color: white; padding: 8px 16px; border-radius: 6px; 
-                                    text-decoration: none; font-size: 0.9rem; font-weight: 500; display: inline-block;
-                                ">⬇️ Download WAV</a>
+                        li.innerHTML = `
+                            <span class="file-name">${filename}</span>
+                            <div class="file-actions">
+                                <button class="btn btn-secondary btn-small" onclick="playFile('${filename}')">
+                                    ▶️ Play
+                                </button>
+                                <a href="/download/${filename}" class="btn btn-primary btn-small" download="${filename}">
+                                    ⬇️ Download
+                                </a>
                             </div>
                         `;
                         
-                        geminiMessage.style.cssText = 'color: #10b981; font-weight: 500; margin-bottom: 16px; padding: 16px; background: #ecfdf5; border-radius: 8px; text-align: center; border: 1px solid #a7f3d0;';
-                        audioSection.insertBefore(geminiMessage, audioSection.firstChild);
-                        
-                    } else {
-                        // Fallback to browser TTS
-                        audioPlayer.style.display = 'none';
-                        document.getElementById('customAudioControls').style.display = 'block';
-                        
-                        // Clean text for speech (remove stage directions and sound effects)
-                        speechText = data.script
-                            .replace(/\([^)]*\)/g, '') // Remove stage directions
-                            .replace(/\[[^\]]*\]/g, '') // Remove sound effects
-                            .replace(/Speech speed should be 5x/gi, '') // Remove speed instruction
-                            .replace(/Voiceover:/gi, '') // Remove voiceover labels
-                            .trim();
-                            
-                        // Show message about browser TTS
-                        const audioSection = document.querySelector('.audio-section');
-                        const browserMessage = document.createElement('p');
-                        browserMessage.className = 'browser-audio-message';
-                        browserMessage.innerHTML = '🔊 <strong>Browser Text-to-Speech</strong><br>Using your device\'s built-in voice';
-                        browserMessage.style.cssText = 'color: #6366f1; font-weight: 500; margin-bottom: 16px; padding: 12px; background: #eef2ff; border-radius: 8px; text-align: center; border: 1px solid #c7d2fe;';
-                        audioSection.insertBefore(browserMessage, audioSection.firstChild);
-                    }
-
-                    // Update keywords
-                    keywordsList.innerHTML = '';
-                    data.keywords.forEach(keyword => {
-                        const tag = document.createElement('span');
-                        tag.className = 'keyword-tag';
-                        tag.textContent = keyword;
-                        keywordsList.appendChild(tag);
+                        filesList.appendChild(li);
                     });
-
-                    // Show results
-                    results.classList.remove('hidden');
                     
-                    // Reset audio controls
-                    resetAudioControls();
-                    
+                    filesSection.style.display = 'block';
                 } else {
-                    throw new Error(data.error || 'Failed to generate content');
+                    alert('No audio files found');
                 }
-
+                
             } catch (error) {
-                console.error('Error:', error);
-                errorMessage.textContent = `Error: ${error.message}`;
-                errorMessage.classList.remove('hidden');
-            } finally {
-                // Reset button state
-                generateBtn.disabled = false;
-                generateBtn.innerHTML = '<i class="fas fa-play"></i> Generate Script';
+                console.error('Error loading files:', error);
+                alert('Error loading files');
             }
-        });
-
-        // Custom audio controls for Speech Synthesis
-        playPauseBtn.addEventListener('click', () => {
-            if (isPlaying) {
-                // Pause/Stop speech
-                speechSynthesis.cancel();
-                isPlaying = false;
-                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                clearInterval(window.speechProgressInterval);
-            } else {
-                // Start speech
-                if (speechText) {
-                    startSpeech();
-                }
-            }
-        });
-
-        function startSpeech() {
-            if (!speechText) return;
-            
-            // Cancel any ongoing speech
-            speechSynthesis.cancel();
-            
-            // Create utterance
-            currentUtterance = new SpeechSynthesisUtterance(speechText);
-            
-            // Configure speech settings
-            currentUtterance.rate = 1.2; // Slightly faster for reel-style
-            currentUtterance.pitch = 1.0;
-            currentUtterance.volume = 1.0;
-            
-            // Try to use a more natural voice
-            const voices = speechSynthesis.getVoices();
-            const preferredVoice = voices.find(voice => 
-                voice.name.includes('Google') || 
-                voice.name.includes('Microsoft') || 
-                voice.lang.startsWith('en')
-            );
-            if (preferredVoice) {
-                currentUtterance.voice = preferredVoice;
-            }
-            
-            // Estimate duration (roughly 150 words per minute)
-            const wordCount = speechText.split(' ').length;
-            speechDuration = (wordCount / 180) * 60; // seconds
-            
-            currentUtterance.onstart = () => {
-                isPlaying = true;
-                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                speechProgress = 0;
-                
-                // Start progress animation
-                window.speechProgressInterval = setInterval(() => {
-                    speechProgress += 0.1;
-                    const progress = Math.min((speechProgress / speechDuration) * 100, 100);
-                    progressFill.style.width = progress + '%';
-                    
-                    const currentTime = formatTime(speechProgress);
-                    const totalTime = formatTime(speechDuration);
-                    timeDisplay.textContent = `${currentTime} / ${totalTime}`;
-                }, 100);
-            };
-            
-            currentUtterance.onend = () => {
-                isPlaying = false;
-                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                progressFill.style.width = '100%';
-                clearInterval(window.speechProgressInterval);
-                
-                // Reset after a moment
-                setTimeout(() => {
-                    progressFill.style.width = '0%';
-                    timeDisplay.textContent = `0:00 / ${formatTime(speechDuration)}`;
-                }, 1000);
-            };
-            
-            currentUtterance.onerror = () => {
-                isPlaying = false;
-                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                clearInterval(window.speechProgressInterval);
-            };
-            
-            // Start speaking
-            speechSynthesis.speak(currentUtterance);
         }
 
-        // Load voices when available
-        if (speechSynthesis.onvoiceschanged !== undefined) {
-            speechSynthesis.onvoiceschanged = () => {
-                // Voices loaded
-            };
-        }
-
-        progressBar.addEventListener('click', (e) => {
-            if (speechDuration && speechText) {
-                speechSynthesis.cancel();
-                const rect = progressBar.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
-                const width = rect.width;
-                const clickProgress = clickX / width;
-                
-                // Can't really seek in speech synthesis, so restart from beginning
-                // This is a limitation of the Web Speech API
-                if (clickProgress > 0.1) {
-                    // Just restart the speech
-                    setTimeout(() => startSpeech(), 100);
-                }
-            }
-        });
-
-        function resetAudioControls() {
-            // Cancel any ongoing speech
-            speechSynthesis.cancel();
-            clearInterval(window.speechProgressInterval);
+        function playFile(filename) {
+            const audioPlayer = document.getElementById('audioPlayer');
+            audioPlayer.src = `/download/${filename}`;
+            audioPlayer.play();
             
-            isPlaying = false;
-            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-            progressFill.style.width = '0%';
-            timeDisplay.textContent = '0:00 / 0:00';
+            // Scroll to audio player
+            document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
         }
 
-        function formatTime(seconds) {
-            if (isNaN(seconds)) return '0:00';
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
-        }
-
-        // Auto-play audio when loaded (optional)
-        audioPlayer.addEventListener('loadeddata', () => {
-            // Uncomment the line below if you want auto-play
-            // audioPlayer.play();
+        // Auto-load files on page load
+        window.addEventListener('load', () => {
+            loadFiles();
         });
     </script>
 </body>

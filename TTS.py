@@ -98,7 +98,7 @@ def wave_file(filename, pcm, channels=1, rate=24000, sample_width=2):
       wf.setframerate(rate)
       wf.writeframes(pcm)
 
-client = genai.Client(api_key="AIzaSyBqQWi_gGsRya03oqHpFiWMSyCU3VxlXBA")
+client = genai.Client(api_key="AIzaSyBMi7RqQdtvSjqGJFKePfEuAmbojFksIcc")
 
 response = client.models.generate_content(
    model="gemini-2.5-flash-preview-tts",
@@ -128,5 +128,3 @@ with open('keywords.txt', 'w') as f:
 
 print(f"\nKeywords saved to keywords.txt")
 print(f"Audio saved to {file_name}")
-
-
