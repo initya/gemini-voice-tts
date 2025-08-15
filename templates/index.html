@@ -378,38 +378,63 @@
                     })
                 });
                 
-                const data = await response.json();
+                // Check if response is ok
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                }
+                
+                // Check if response has content
+                const responseText = await response.text();
+                if (!responseText) {
+                    throw new Error('Empty response from server');
+                }
+                
+                // Try to parse JSON
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('JSON parse error:', parseError);
+                    console.error('Response text:', responseText);
+                    throw new Error('Invalid JSON response from server');
+                }
                 
                 if (data.success) {
                     // Display script
                     document.getElementById('scriptContent').innerHTML = 
-                        data.script.replace(/\n/g, '<br>');
+                        (data.script || '').replace(/\n/g, '<br>');
                     
                     // Display keywords
                     const keywordsDiv = document.getElementById('keywordsContent');
                     keywordsDiv.innerHTML = '';
-                    data.keywords.forEach(keyword => {
-                        const span = document.createElement('span');
-                        span.className = 'keyword';
-                        span.textContent = keyword;
-                        keywordsDiv.appendChild(span);
-                    });
+                    if (data.keywords && Array.isArray(data.keywords)) {
+                        data.keywords.forEach(keyword => {
+                            const span = document.createElement('span');
+                            span.className = 'keyword';
+                            span.textContent = keyword;
+                            keywordsDiv.appendChild(span);
+                        });
+                    }
                     
                     // Setup audio player and download
-                    const audioPlayer = document.getElementById('audioPlayer');
-                    const downloadBtn = document.getElementById('downloadBtn');
-                    
-                    audioPlayer.src = `/download/${data.filename}`;
-                    downloadBtn.href = `/download/${data.filename}`;
-                    downloadBtn.download = data.filename;
-                    
-                    // Show results
-                    resultSection.classList.add('show');
-                    
-                    // Auto-play audio (some browsers may block this)
-                    audioPlayer.play().catch(() => {
-                        console.log('Auto-play was prevented by browser');
-                    });
+                    if (data.filename) {
+                        const audioPlayer = document.getElementById('audioPlayer');
+                        const downloadBtn = document.getElementById('downloadBtn');
+                        
+                        audioPlayer.src = `/download/${data.filename}`;
+                        downloadBtn.href = `/download/${data.filename}`;
+                        downloadBtn.download = data.filename;
+                        
+                        // Show results
+                        resultSection.classList.add('show');
+                        
+                        // Auto-play audio (some browsers may block this)
+                        audioPlayer.play().catch(() => {
+                            console.log('Auto-play was prevented by browser');
+                        });
+                    } else {
+                        throw new Error('No audio file generated');
+                    }
                     
                 } else {
                     throw new Error(data.error || 'Unknown error occurred');

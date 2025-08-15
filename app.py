@@ -67,8 +67,9 @@ def wave_file(filename, pcm, channels=1, rate=24000, sample_width=2):
 def generate_tts_script_and_audio(topic_option=None, custom_prompt=None):
     """Generate TTS script and audio, return script, keywords, and filename"""
     
-    # Base prompt for script generation
-    base_prompt = """
+    try:
+        # Base prompt for script generation
+        base_prompt = """
 Generate a short, creative, and funny 30-second reel script in a curious tone for speech generation for a fast-paced Instagram reel. 
 add "Speech speed should be 5x" in every output.
 The script must ONLY be about ONE of the following topics:
@@ -94,70 +95,109 @@ Voiceover: Yeah… so basically, cardio day is a literal heartbreaker for them. 
 
 Now, generate the script.
 """
-    
-    # Use custom prompt if provided, otherwise use base prompt
-    prompt = custom_prompt if custom_prompt else base_prompt
-    
-    # Generate script
-    script_response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
-    
-    generated_text = script_response.text
-    keywords_list = extract_keywords(generated_text)
-    
-    # Generate TTS audio
-    tts_response = client.models.generate_content(
-        model="gemini-2.5-flash-preview-tts",
-        contents=generated_text,
-        config=types.GenerateContentConfig(
-            response_modalities=["AUDIO"],
-            speech_config=types.SpeechConfig(
-                voice_config=types.VoiceConfig(
-                    prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                        voice_name='Kore',
-                    )
-                )
-            ),
+        
+        # Use custom prompt if provided, otherwise use base prompt
+        prompt = custom_prompt if custom_prompt else base_prompt
+        
+        # Generate script
+        print(f"Generating script with prompt: {prompt[:100]}...")
+        script_response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
         )
-    )
-    
-    # Get audio data
-    audio_data = tts_response.candidates[0].content.parts[0].inline_data.data
-    
-    # Create unique filename with timestamp
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"tts_audio_{timestamp}_{uuid.uuid4().hex[:8]}.wav"
-    
-    # Save audio file
-    wave_file(filename, audio_data)
-    
-    return {
-        'script': generated_text,
-        'keywords': keywords_list,
-        'filename': filename,
-        'success': True
-    }
+        
+        if not script_response or not script_response.text:
+            raise Exception("Failed to generate script - empty response from Gemini")
+        
+        generated_text = script_response.text
+        print(f"Generated script: {generated_text[:100]}...")
+        
+        keywords_list = extract_keywords(generated_text)
+        
+        # Generate TTS audio
+        print("Generating TTS audio...")
+        tts_response = client.models.generate_content(
+            model="gemini-2.5-flash-preview-tts",
+            contents=generated_text,
+            config=types.GenerateContentConfig(
+                response_modalities=["AUDIO"],
+                speech_config=types.SpeechConfig(
+                    voice_config=types.VoiceConfig(
+                        prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                            voice_name='Kore',
+                        )
+                    )
+                ),
+            )
+        )
+        
+        if not tts_response or not tts_response.candidates:
+            raise Exception("Failed to generate TTS audio - empty response from Gemini")
+        
+        # Get audio data
+        try:
+            audio_data = tts_response.candidates[0].content.parts[0].inline_data.data
+        except (IndexError, AttributeError) as e:
+            raise Exception(f"Failed to extract audio data from TTS response: {str(e)}")
+        
+        # Create unique filename with timestamp
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"tts_audio_{timestamp}_{uuid.uuid4().hex[:8]}.wav"
+        
+        # Save audio file
+        wave_file(filename, audio_data)
+        print(f"Audio saved to: {filename}")
+        
+        return {
+            'script': generated_text,
+            'keywords': keywords_list,
+            'filename': filename,
+            'success': True
+        }
+        
+    except Exception as e:
+        print(f"Error in generate_tts_script_and_audio: {str(e)}")
+        return {
+            'success': False,
+            'error': str(e),
+            'script': '',
+            'keywords': [],
+            'filename': ''
+        }
 
 @app.route('/')
 def index():
     """Main page with TTS interface"""
     return render_template('index.html')
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint for Render"""
+    return jsonify({'status': 'healthy', 'service': 'gemini-tts-app'})
+
 @app.route('/generate', methods=['POST'])
 def generate_audio():
     """Generate TTS audio and return details"""
     try:
-        data = request.get_json()
-        custom_prompt = data.get('custom_prompt', '')
+        # Handle both JSON and form data
+        if request.is_json:
+            data = request.get_json() or {}
+        else:
+            data = request.form.to_dict()
+        
+        custom_prompt = data.get('custom_prompt', '').strip()
         
         # Generate TTS
         result = generate_tts_script_and_audio(custom_prompt=custom_prompt if custom_prompt else None)
         
+        # Ensure the response is properly formatted
+        if not isinstance(result, dict):
+            raise ValueError("Invalid result format from TTS generation")
+        
         return jsonify(result)
     
     except Exception as e:
+        print(f"Error in generate_audio: {str(e)}")  # Log error for debugging
         return jsonify({
             'success': False,
             'error': str(e)
