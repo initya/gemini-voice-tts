@@ -10,8 +10,9 @@ import uuid
 
 app = Flask(__name__)
 
-# Gemini client
-client = genai.Client(api_key="AIzaSyBMi7RqQdtvSjqGJFKePfEuAmbojFksIcc")
+# Gemini client - Use environment variable for API key in production
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', "AIzaSyBMi7RqQdtvSjqGJFKePfEuAmbojFksIcc")
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 def extract_keywords(text, top_n=10):
     """
@@ -184,4 +185,8 @@ def list_files():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
+    # For development
     app.run(debug=True, host='0.0.0.0', port=5000)
+else:
+    # For production (Render will use gunicorn)
+    app.debug = False
