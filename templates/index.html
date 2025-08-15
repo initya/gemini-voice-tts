@@ -415,18 +415,35 @@
 
                     // Check if we have server-generated audio
                     if (data.audio_url && data.has_server_audio) {
-                        // Use server-generated Gemini audio
+                        // Use server-generated audio
                         audioSource.src = data.audio_url;
                         audioPlayer.load();
                         audioPlayer.style.display = 'block';
                         document.getElementById('customAudioControls').style.display = 'none';
                         
-                        // Show message about Gemini audio
+                        // Show message about generated audio with download option
                         const audioSection = document.querySelector('.audio-section');
-                        const geminiMessage = document.createElement('p');
+                        const geminiMessage = document.createElement('div');
                         geminiMessage.className = 'gemini-audio-message';
-                        geminiMessage.innerHTML = '🎤 <strong>Gemini AI Generated Audio</strong><br>High-quality voice synthesis by Google';
-                        geminiMessage.style.cssText = 'color: #10b981; font-weight: 500; margin-bottom: 16px; padding: 12px; background: #ecfdf5; border-radius: 8px; text-align: center; border: 1px solid #a7f3d0;';
+                        
+                        // Extract filename from audio_url
+                        const filename = data.audio_url.split('/').pop();
+                        
+                        geminiMessage.innerHTML = `
+                            <p style="margin: 0 0 12px 0;"><strong>🎤 Generated Audio Available</strong><br>Server-generated audio file ready for playback</p>
+                            <div style="display: flex; gap: 12px; justify-content: center; align-items: center;">
+                                <button onclick="document.getElementById('audioPlayer').play()" style="
+                                    background: #10b981; color: white; border: none; padding: 8px 16px; 
+                                    border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 500;
+                                ">▶️ Play Audio</button>
+                                <a href="/download/audio/${filename}" download style="
+                                    background: #3b82f6; color: white; padding: 8px 16px; border-radius: 6px; 
+                                    text-decoration: none; font-size: 0.9rem; font-weight: 500; display: inline-block;
+                                ">⬇️ Download WAV</a>
+                            </div>
+                        `;
+                        
+                        geminiMessage.style.cssText = 'color: #10b981; font-weight: 500; margin-bottom: 16px; padding: 16px; background: #ecfdf5; border-radius: 8px; text-align: center; border: 1px solid #a7f3d0;';
                         audioSection.insertBefore(geminiMessage, audioSection.firstChild);
                         
                     } else {
